@@ -1,0 +1,174 @@
+<title>ボクセル工房</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+1p:wght@400;700&display=swap">
+<style>
+/* Layout: one-screen editor — top bar, 3D stage, tool panel pinned below */
+:root{
+  --bg:#EDE6DA; --stage:#DCD2C2; --panel:#F6F1E9; --fg:#2E2924; --muted:#6E6357;
+  --line:#CDBFAA; --chip:#FBF8F3; --accent:#B8693F; --accent-fg:#FFF8EF; --danger:#A8433A;
+  --sheet:#FBF8F3; --shade:rgba(30,24,18,.38);
+  --f-display:"DotGothic16","Hiragino Sans",sans-serif;
+  --f-body:"M PLUS 1p","Hiragino Sans","Noto Sans JP",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1F1B17; --stage:#2A251F; --panel:#26211C; --fg:#EFE7DB; --muted:#A99C8C;
+  --line:#463C32; --chip:#302922; --accent:#D98A5C; --accent-fg:#1F1B17; --danger:#E07B6E;
+  --sheet:#2A241E; --shade:rgba(0,0,0,.55); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1F1B17; --stage:#2A251F; --panel:#26211C; --fg:#EFE7DB; --muted:#A99C8C;
+  --line:#463C32; --chip:#302922; --accent:#D98A5C; --accent-fg:#1F1B17; --danger:#E07B6E;
+  --sheet:#2A241E; --shade:rgba(0,0,0,.55); color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);display:flex;flex-direction:column;margin:0;overflow:hidden}
+button{font:inherit;color:inherit}
+.wrap{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+header.top{display:flex;align-items:center;gap:8px;padding-block:8px;flex-wrap:wrap;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.name{font-family:var(--f-display);font-size:1.15rem;background:none;border:none;padding:4px 0;cursor:pointer;min-width:0;flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.name::after{content:" ✎";font-size:.8rem;color:var(--muted)}
+.hgroup{display:flex;gap:6px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--chip);border-radius:4px;padding:7px 11px;font-size:.85rem;cursor:pointer;white-space:nowrap}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:700}
+.btn.icon{padding:7px 10px;font-size:1rem;line-height:1}
+.btn:disabled{opacity:.4;cursor:default}
+.btn:focus-visible,.seg button:focus-visible,.sw:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#stage{flex:1;min-height:38%;position:relative;background:var(--stage);overflow:hidden;touch-action:none;margin-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));border-radius:6px}
+#stage canvas{display:block;width:100%;height:100%}
+.status{position:absolute;left:10px;top:8px;font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums;pointer-events:none;line-height:1.5}
+.hint{position:absolute;left:50%;transform:translateX(-50%);bottom:10px;background:var(--fg);color:var(--bg);font-size:.8rem;border-radius:4px;padding:6px 10px;display:flex;gap:10px;align-items:center;white-space:nowrap}
+.hint button{background:none;border:1px solid currentColor;border-radius:3px;padding:2px 8px;font-size:.75rem;cursor:pointer;color:inherit}
+.panel{background:var(--panel);border-top:1px solid var(--line);margin-top:10px;padding-block:10px;display:flex;flex-direction:column;gap:9px;max-height:48%;overflow-y:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-width:0}
+.lab{font-size:.7rem;color:var(--muted);letter-spacing:.06em;min-width:3.2em}
+.seg{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;flex:1;min-width:0}
+.seg button{flex:1;background:var(--chip);border:none;border-right:1px solid var(--line);padding:9px 2px;font-size:.82rem;cursor:pointer;white-space:nowrap}
+.seg button:last-child{border-right:none}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);font-weight:700}
+.tools button{font-family:var(--f-display);font-size:.95rem}
+.toggle[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.swatches{flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
+.sw{flex:0 0 auto;width:34px;height:34px;border-radius:4px;border:1px solid var(--line);cursor:pointer;position:relative;padding:0}
+.sw[aria-pressed="true"]{outline:3px solid var(--fg);outline-offset:1px}
+.sw[data-mat]::after{content:attr(data-mat);position:absolute;right:1px;bottom:0;font-size:.6rem;line-height:1;padding:2px;border-radius:2px;background:rgba(255,255,255,.85);color:#2E2924}
+.sw.add{background:var(--chip);font-size:1.2rem;color:var(--muted)}
+.pchip{flex:0 0 auto;border:1px solid var(--line);border-radius:4px;padding:6px 9px;font-size:.78rem;cursor:pointer;background:var(--chip);display:flex;gap:6px;align-items:center}
+.pchip i{width:12px;height:12px;border-radius:2px;display:inline-block}
+.pchip[aria-pressed="true"]{outline:2px solid var(--fg);outline-offset:1px;font-weight:700}
+details{border-top:1px dashed var(--line);padding-top:8px}
+summary{font-size:.8rem;color:var(--muted);cursor:pointer}
+.opts{display:grid;gap:10px;margin-top:10px}
+.opts label{display:flex;align-items:center;gap:8px;font-size:.82rem}
+.opts input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
+.note{font-size:.74rem;color:var(--muted);line-height:1.6}
+.vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.sheet{position:fixed;inset:0;background:var(--shade);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet .card{background:var(--sheet);width:100%;max-width:560px;max-height:88%;overflow-y:auto;border-radius:10px 10px 0 0;padding-block:16px calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+.sheet h2{font-family:var(--f-display);font-weight:400;font-size:1.2rem;margin:0}
+.sheet h3{font-size:.75rem;color:var(--muted);letter-spacing:.08em;margin:4px 0 0;font-weight:700}
+.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--chip)}
+.item:last-child{border-bottom:none}
+.item .t{flex:1;min-width:0;cursor:pointer;background:none;border:none;text-align:left;padding:0}
+.item .t b{display:block;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .t span{font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.danger{color:var(--danger);border-color:var(--danger)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid3 .btn{display:flex;flex-direction:column;gap:2px;padding:10px 4px;align-items:center}
+.grid3 small{font-size:.68rem;color:var(--muted)}
+#pv{height:300px;background:var(--stage);border-radius:6px;position:relative;overflow:hidden;touch-action:none}
+#pv canvas{display:block;width:100%;height:100%}
+.clips{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.clips button{padding:8px 2px}
+.clips button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+select{font:inherit;font-size:.85rem;padding:7px 8px;border:1px solid var(--line);border-radius:4px;background:var(--chip);color:var(--fg);min-width:0;max-width:100%}
+.item .t.static{cursor:default}
+.drv-row{display:flex;flex-direction:column;gap:6px;font-size:.82rem}
+.facts{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.field{display:flex;gap:8px}
+.field input{flex:1;min-width:0;font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:5px;font-size:.84rem;z-index:30;max-width:calc(100% - 32px)}
+@media (min-width:860px){
+  body{flex-direction:row;flex-wrap:wrap}
+  header.top{width:100%}
+  #stage{margin-right:0;margin-bottom:16px}
+  .panel{width:340px;max-height:none;margin:0 16px 16px 12px;border:1px solid var(--line);border-radius:6px;padding:12px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <button class="name" id="nameBtn" aria-label="名前を変える">オーク</button>
+  <div class="hgroup">
+    <button class="btn icon" id="undoBtn" aria-label="元に戻す" title="元に戻す">↶</button>
+    <button class="btn icon" id="redoBtn" aria-label="やり直す" title="やり直す">↷</button>
+    <button class="btn" id="openBtn">開く</button>
+    <button class="btn" id="saveBtn">保存</button>
+    <button class="btn primary" id="exportBtn">書き出す</button>
+  </div>
+</header>
+
+<div id="stage">
+  <div class="status" id="status"></div>
+  <div class="hint" id="boxHint" hidden><span>箱：もう一方の角をタップ</span><button id="boxCancel">やめる</button></div>
+</div>
+
+<section class="panel" aria-label="道具">
+  <div class="row">
+    <div class="seg tools" id="tools">
+      <button id="t-place" data-tool="place" aria-pressed="true">置く</button>
+      <button id="t-erase" data-tool="erase" aria-pressed="false">消す</button>
+      <button id="t-paint" data-tool="paint" aria-pressed="false">塗る</button>
+      <button id="t-part" data-tool="part" aria-pressed="false">パーツ</button>
+      <button id="t-pick" data-tool="pick" aria-pressed="false">スポイト</button>
+    </div>
+  </div>
+  <div class="row">
+    <div class="seg" id="modes">
+      <button id="m-one" data-mode="one" aria-pressed="true">1マス</button>
+      <button id="m-box" data-mode="box" aria-pressed="false">箱</button>
+      <button id="m-fill" data-mode="fill" aria-pressed="false">つながり</button>
+    </div>
+    <button class="btn toggle" id="mirrorBtn" aria-pressed="true">左右対称</button>
+  </div>
+  <div class="row swatches" id="palette" aria-label="色"></div>
+  <div class="row swatches" id="parts" aria-label="パーツ" hidden></div>
+  <details id="more">
+    <summary>表示・下絵・設定</summary>
+    <div class="opts">
+      <label for="slice">断面 <input type="range" id="slice" min="1" max="96" value="96"><span id="sliceVal" class="facts"></span></label>
+      <label for="grain">ムラ（素材感） <input type="range" id="grain" min="0" max="1" step="0.05" value="0"></label>
+      <div class="row">
+        <button class="btn toggle" id="partViewBtn" aria-pressed="false">パーツ色で表示</button>
+        <button class="btn" id="viewFront">正面から見る</button>
+        <button class="btn" id="viewSide">横から見る</button>
+      </div>
+      <div class="row">
+        <span class="lab">下絵</span>
+        <button class="btn" id="refPick">画像を選ぶ</button>
+        <button class="btn" id="refDrive">ドライブから</button>
+        <div class="seg" id="refSide" style="flex:0 1 auto">
+          <button id="rs-front" data-side="front" aria-pressed="true">正面</button>
+          <button id="rs-side" data-side="side" aria-pressed="false">側面</button>
+        </div>
+        <button class="btn" id="refClear">外す</button>
+      </div>
+      <label for="refOpacity">下絵の濃さ <input type="range" id="refOpacity" min="0.1" max="1" step="0.05" value="0.6"></label>
+      <div class="row">
+        <button class="btn" id="refineBtn">細かくする（×2）</button>
+        <button class="btn" id="jsonOutBtn">作品ファイルを保存</button>
+      </div>
+      <p class="note">素材（布・金属・つやなど）は、色を2回押すと開く画面で色ごとに決められます。「細かくする」は1マスを縦横奥に2分割します。目や模様を細かく入れたいときに使います。下絵は保存されません。</p>
+    </div>
+  </details>
+</section>
+
+<div class="sheet" id="sheet" hidden><div class="card" id="sheetCard"></div></div>
+<input type="color" id="colorInput" class="vh" tabindex="-1" aria-hidden="true">
+<input type="file" id="refFile" class="vh" accept="image/*" tabindex="-1" aria-hidden="true">
+<input type="file" id="jsonFile" class="vh" accept=".json,application/json" tabindex="-1" aria-hidden="true">
+<div id="toast" hidden></div>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+/*__APP_JS__*/
+</script>
