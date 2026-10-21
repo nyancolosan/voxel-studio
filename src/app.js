@@ -370,7 +370,7 @@ async function openCloud(meta){
 }
 async function deleteCloud(meta){
   try{for(let i=0;i<meta.chunks;i++)await col.doc(`c_${meta.pid}_${i}`).delete();await col.doc('m_'+meta.pid).delete();
-    if(S.pid===meta.pid){S.pid=null;S.cloudChunks=0;S.dirty=true;updateStatus();}toast('削除しました');showOpen();}catch(e){toast('削除できませんでした');}
+    if(S.pid===meta.pid){S.pid=null;S.cloudChunks=0;S.dirty=true;updateStatus();scheduleLocal();}toast('削除しました');showOpen();}catch(e){toast('削除できませんでした');}
 }
 const PRESETS=[{n:'小',w:32,h:48,d:32,u:5},{n:'中',w:64,h:96,d:64,u:2.5},{n:'大',w:96,h:128,d:96,u:1.875}];
 async function showOpen(){
