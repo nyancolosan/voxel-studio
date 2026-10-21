@@ -17,15 +17,17 @@ Codex など、このリポジトリで作業するエージェント向けの�
 | `tools/build_orc.py` / `tools/make_sample.py` | オークの元データとボクセル化スクリプト |
 | `tests/export_test.mjs` | `.glb` 書き出しのテスト（Node、ブラウザ不要） |
 | `tests/edit_test.cjs` | 置く・左右対称・箱・つながり・元に戻すのテスト |
+| `tests/storage_test.cjs` | クラウド分割保存・削除後の状態・Googleドライブ読込のテスト |
 | `dist/voxel_studio.html` | 公開用の完成ファイル（ビルドで生成。手で編集しない） |
 
 ## 作業の流れ（必ず守る）
 1. 変更は `src/` と `data/` に対して行う。`dist/` は直接編集しない。
-2. 変更後に次の3つを実行し、すべて通ることを確認する。
+2. 変更後に次の4つを実行し、すべて通ることを確認する。
    ```
    python3 tools/build.py
    node tests/export_test.mjs
    node tests/edit_test.cjs
+   node tests/storage_test.cjs
    ```
 3. `dist/voxel_studio.html` もビルドし直してコミットに含める（オーナーはこれをClaudeに渡して公開する）。
 4. テストは `src/app.js` の**見出しコメント**（`// ---------- parts ----------` など）で範囲を切り出している。見出しの文言を変えたり、関数を別の区画へ移したりしたら、テスト側も合わせて直す。
